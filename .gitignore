@@ -1,0 +1,10 @@
+.gradle
+/gradle/
+gradlew*
+/build/
+settings.gradle
+
+### INTELLIJ IDEA ###
+.idea
+
+.DS_Store
