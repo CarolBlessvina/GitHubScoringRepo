@@ -84,7 +84,7 @@ public class GitHubClient {
                 GitHubRepositoryDTO response = callGithubRepository(creationDate, creationDate.plusHours(1), language, page);
 
                 if (response != null && response.getItems() != null && !response.getItems().isEmpty()) {
-                    log.debug("Received {} repositories on hourly page {}", response.getItems().size(), page);
+                    log.info("Received {} repositories on hourly page {}", response.getItems().size(), page);
                     hourlyRepositories.addAll(response.getItems());
                     if (response.getItems().size() < 100) {
                         hasMoreData = false;
@@ -114,10 +114,26 @@ public class GitHubClient {
                 uriVariables);
 
         if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.getBody() != null) {
+            checkRateLimitFromGithub(responseEntity);
             log.debug("GitHub API call successful for page {}", page);
             return responseEntity.getBody();
         }
         throw new GithubBadRequestException("Failed to get a successful call from Github");
+    }
+
+    private void checkRateLimitFromGithub(ResponseEntity<GitHubRepositoryDTO> responseEntity) {
+        int rateLimit = responseEntity.getHeaders().get("X-RateLimit-Limit") != null ?
+                Integer.parseInt(responseEntity.getHeaders().get("X-RateLimit-Limit").getFirst()) : 0;
+
+        int rateLimitUsed = responseEntity.getHeaders().get("X-RateLimit-Used") != null ?
+                Integer.parseInt(responseEntity.getHeaders().get("X-RateLimit-Used").getFirst()) : 0;
+        if(rateLimit == rateLimitUsed){
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private GitHubRepositoryDTO callGithubRepository(LocalDateTime creationDate, LocalDateTime now, String language, int page)  {
@@ -133,6 +149,7 @@ public class GitHubClient {
                 uriVariables);
 
         if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.getBody() != null) {
+            checkRateLimitFromGithub(responseEntity);
             log.debug("GitHub API call successful for hourly data on page {}", page);
             return responseEntity.getBody();
         }

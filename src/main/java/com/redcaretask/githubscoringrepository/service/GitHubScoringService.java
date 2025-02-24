@@ -35,7 +35,7 @@ public class GitHubScoringService {
     private double calculateScore(int stars, int forks, LocalDateTime lastUpdated) {
 
         long daysSinceUpdate = ChronoUnit.DAYS.between(lastUpdated, LocalDateTime.now());
-        double recencyBonus = Math.max(100 - daysSinceUpdate, 0); // TODO constants
+        double recencyBonus = Math.max(100 - daysSinceUpdate, 0);
 
         return (stars * STAR_WEIGHT) + (forks * FORK_WEIGHT) + recencyBonus;
     }
